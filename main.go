@@ -1,7 +1,17 @@
 package main
 
-func main() {
-	account := accounts.NewAcount("nico")
-	account.Deposit(10)
+import (
+	"fmt"
 
+	"github.com/sundoforce/learngo/mydict"
+)
+
+func main() {
+	dictionary := mydict.Dictionary{"first": "First word"}
+	definition, err := dictionary.Search("first")
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(definition)
+	}
 }
