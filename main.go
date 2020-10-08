@@ -1,21 +1,6 @@
 package main
 
 import (
-<<<<<<< HEAD
-	"fmt"
-
-	"github.com/sundoforce/learngo/mydict"
-)
-
-func main() {
-	dictionary := mydict.Dictionary{"first": "First word"}
-	definition, err := dictionary.Search("first")
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(definition)
-	}
-=======
 	"errors"
 	"fmt"
 	"net/http"
@@ -63,5 +48,4 @@ func hitURL(url string, c chan<- requestResult) {
 		status = "FAILED"
 	}
 	c <- requestResult{url: url, status: status}
->>>>>>> b4c4997c5f25a691597e090a84f126e73286961d
 }
