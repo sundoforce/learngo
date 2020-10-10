@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -44,10 +46,10 @@ func writeJobs(jobs []extractedJob) {
 	wErr := w.Write(headers)
 	checkErr(wErr)
 
-	for _, job := rnage jobs {
-		jobSlice := []string("https://kr.indeed.com/viewjob?jk=" +job.id, job.title, job.location, job.salary. job.summary)
+	for _, job := range jobs {
+		jobSlice := []string("https://kr.indeed.com/viewjob?jk="+job.id, job.title, job.location, job.salary.job.summary)
 		jwErr := w.Write(jobSlice)
-		checkEff(jwErr)
+		checkErr(jwErr)
 	}
 }
 func getPage(page int) []extractedJob {
