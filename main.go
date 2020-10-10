@@ -26,12 +26,30 @@ func main() {
 
 	for i := 0; i < totalPages; i++ {
 		extractedJobs := getPage(i)
-		jobs = append(jobx, extractedJobs...)
+		jobs = append(jobs, extractedJobs...)
 	}
 
-	fmt.Println(jobs)
+	writeJobs(jobs)
 }
 
+func writeJobs(jobs []extractedJob) {
+	file, err := os.Create("jobs.csv")
+	checkErr(err)
+
+	w := csv.NewWriter(file)
+	defer w.Flush()
+
+	headers := []string{"ID", "TITLE", "Location", "Salary", "Summary"}
+
+	wErr := w.Write(headers)
+	checkErr(wErr)
+
+	for _, job := rnage jobs {
+		jobSlice := []string("https://kr.indeed.com/viewjob?jk=" +job.id, job.title, job.location, job.salary. job.summary)
+		jwErr := w.Write(jobSlice)
+		checkEff(jwErr)
+	}
+}
 func getPage(page int) []extractedJob {
 	var jobs []extractedJob
 	pageURL := baseURL + "&start=" + strconv.Itoa(page*50)
