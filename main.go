@@ -1,15 +1,14 @@
 package main
 
 import (
-	"encoding/csv"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	ccsv "github.com/tsak/concurrent-csv-writer"
 )
 
 type extractedJob struct {
@@ -36,7 +35,8 @@ func main() {
 		jobs = append(jobs, extractedJobs...)
 	}
 
-	writeJobs(jobs)
+	fmt.Println("돌긴 돌았음")
+	// writeJobs(jobs)
 	fmt.Println("Done, extracted", len(jobs))
 }
 
@@ -64,7 +64,6 @@ func getPage(page int, mainC chan<- []extractedJob) {
 		job := <-c
 		jobs = append(jobs, job)
 	}
-	mainC <- jobs
 }
 
 func extractJob(card *goquery.Selection, c chan<- extractedJob) {
@@ -82,22 +81,34 @@ func extractJob(card *goquery.Selection, c chan<- extractedJob) {
 }
 
 func writeJobs(jobs []extractedJob) {
-	file, err := os.Create("jobs.csv")
+
+	fmt.Println("입력을 쓰기 시작")
+	csv, err := ccsv.NewCsvWriter("sample.csv")
+	if err != nil {
+		panic("Could not open `sample.csv` for writing")
+	}
 	checkErr(err)
 
-	w := csv.NewWriter(file)
-	defer w.Flush()
+	fmt.Println("###########")
+	// Flush pending writes and close file upon exit of main()
+	defer csv.Close()
 
-	headers := []string{"Link", "TITLE", "Location", "Salary", "Summary"}
+	count := len(jobs)
 
-	wErr := w.Write(headers)
-	checkErr(wErr)
+	done := make(chan bool)
 
-	for _, job := range jobs {
-		jobSlice := []string{"https://kr.indeed.com/viewjob?jk=" + job.id, job.title, job.location, job.salary, job.summary}
-		jwErr := w.Write(jobSlice)
-		checkErr(jwErr)
+	for i := count; i > 0; i-- {
+		fmt.Println(i)
+		go func(i int) {
+			csv.Write([]string{strconv.Itoa(i), "https://kr.indeed.com/viewjob?jk=" + jobs[i].id, jobs[i].title, jobs[i].location, jobs[i].salary, jobs[i].summary})
+			done <- true
+		}(i)
 	}
+
+	for i := 0; i < count; i++ {
+		<-done
+	}
+
 }
 
 func cleanString(str string) string {
