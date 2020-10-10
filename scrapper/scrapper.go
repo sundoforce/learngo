@@ -21,12 +21,12 @@ type extractedJob struct {
 
 // Scrape Indeed by a term
 func Scrape(term string) {
-	var baseURL string = "https://kr.indeed.com/jobs?q=" + term + "python&limit=50"
+	var baseURL string = "https://kr.indeed.com/jobs?q=" + term + "&limit=50"
 	var jobs []extractedJob
 	c := make(chan []extractedJob)
 	totalPages := getPages(baseURL)
 
-	for i := 0; i < totalPages; i++ {
+	for i := 0; i < 9; i++ {
 		go getPage(i, baseURL, c)
 	}
 
@@ -34,6 +34,7 @@ func Scrape(term string) {
 		extractedJobs := <-c
 		jobs = append(jobs, extractedJobs...)
 	}
+
 	writeJobs(jobs)
 	fmt.Println("Done, extracted", len(jobs))
 }
@@ -62,6 +63,7 @@ func getPage(page int, url string, mainC chan<- []extractedJob) {
 		job := <-c
 		jobs = append(jobs, job)
 	}
+	mainC <- jobs
 }
 
 func extractJob(card *goquery.Selection, c chan<- extractedJob) {
@@ -76,6 +78,29 @@ func extractJob(card *goquery.Selection, c chan<- extractedJob) {
 		location: location,
 		salary:   salary,
 		summary:  summary}
+}
+
+// CleanString cleans a string
+func CleanString(str string) string {
+	return strings.Join(strings.Fields(strings.TrimSpace(str)), " ")
+}
+
+func getPages(url string) int {
+	pages := 0
+	res, err := http.Get(url)
+	checkErr(err)
+	checkCode(res)
+
+	defer res.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	checkErr(err)
+
+	doc.Find(".pagination").Each(func(i int, s *goquery.Selection) {
+		pages = s.Find("a").Length()
+	})
+
+	return pages
 }
 
 func writeJobs(jobs []extractedJob) {
@@ -105,29 +130,6 @@ func writeJobs(jobs []extractedJob) {
 		<-done
 	}
 
-}
-
-// CleanString cleans a string
-func CleanString(str string) string {
-	return strings.Join(strings.Fields(strings.TrimSpace(str)), " ")
-}
-
-func getPages(url string) int {
-	pages := 0
-	res, err := http.Get(url)
-	checkErr(err)
-	checkCode(res)
-
-	defer res.Body.Close()
-
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-	checkErr(err)
-
-	doc.Find(".pagination").Each(func(i int, s *goquery.Selection) {
-		pages = s.Find("a").Length()
-	})
-
-	return pages
 }
 
 func checkErr(err error) {
