@@ -32,6 +32,7 @@ func main() {
 	}
 
 	writeJobs(jobs)
+	fmt.Println("Done, extracted", len(jobs))
 }
 
 func writeJobs(jobs []extractedJob) {
