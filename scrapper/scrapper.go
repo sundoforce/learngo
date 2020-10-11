@@ -1,14 +1,15 @@
 package scrapper
 
 import (
+	"encoding/csv"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	ccsv "github.com/tsak/concurrent-csv-writer"
 )
 
 type extractedJob struct {
@@ -26,11 +27,12 @@ func Scrape(term string) {
 	c := make(chan []extractedJob)
 	totalPages := getPages(baseURL)
 
-	for i := 0; i < 9; i++ {
+	print(totalPages)
+	for i := 0; i < totalPages; i++ {
 		go getPage(i, baseURL, c)
 	}
 
-	for i := 0; i < totalPages; i++ {
+	for i := 0; i < 9; i++ {
 		extractedJobs := <-c
 		jobs = append(jobs, extractedJobs...)
 	}
@@ -98,38 +100,42 @@ func getPages(url string) int {
 
 	doc.Find(".pagination").Each(func(i int, s *goquery.Selection) {
 		pages = s.Find("a").Length()
+		fmt.Println(pages)
+
 	})
 
 	return pages
 }
 
+// csv.Write([]string{strconv.Itoa(i), "https://kr.indeed.com/viewjob?jk=" + jobs[i].id, jobs[i].title, jobs[i].location, jobs[i].salary, jobs[i].summary})
 func writeJobs(jobs []extractedJob) {
-
-	csv, err := ccsv.NewCsvWriter("jobs.csv")
-	if err != nil {
-		panic("Could not open `sample.csv` for writing")
-	}
+	c := make(chan []string)
+	file, err := os.Create("jobs.csv")
 	checkErr(err)
 
-	// Flush pending writes and close file upon exit of main()
-	defer csv.Close()
+	w := csv.NewWriter(file)
+	defer w.Flush()
 
-	count := len(jobs)
+	headers := []string{"Link", "Title", "Location", "Salary", "Summary"}
+	wErr := w.Write(headers)
 
-	done := make(chan bool)
+	checkErr(wErr)
 
-	for i := count; i > 0; i-- {
-		fmt.Println(i)
-		go func(i int) {
-			csv.Write([]string{strconv.Itoa(i), "https://kr.indeed.com/viewjob?jk=" + jobs[i].id, jobs[i].title, jobs[i].location, jobs[i].salary, jobs[i].summary})
-			done <- true
-		}(i)
+	for _, job := range jobs {
+		go writeJob(job, c)
 	}
 
-	for i := 0; i < count; i++ {
-		<-done
+	for i := 0; i < len(jobs); i++ {
+		jobc := <-c
+		wErr := w.Write(jobc)
+		checkErr(wErr)
 	}
 
+}
+
+func writeJob(job extractedJob, c chan<- []string) {
+	const baseURL = "https://kr.indeed.com/viewjob?k="
+	c <- []string{baseURL + job.id, job.title, job.location, job.salary, job.summary}
 }
 
 func checkErr(err error) {
