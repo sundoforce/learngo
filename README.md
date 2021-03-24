@@ -4,5 +4,6 @@
 - Indeed.com scrapper
 - 입력한 검색한 언어의 채용정보를 csv파일로 저장 
 
-https://go.qooo.io
-(API 호출 CALL수 제한으로 TEST 자체 부탁드립니다.)
+https://go.qooo.io  
+- API 호출 CALL수 제한으로 TEST 자체 부탁드립니다.
+- Indeed로 부터 블락 당할 수 있음.
